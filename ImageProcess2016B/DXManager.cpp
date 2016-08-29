@@ -55,3 +55,73 @@ IDXGIAdapter* CDXManager::EnumAndChooseAdapter(HWND hWndOwner)
 	pFactory->Release();
 	return pAdapter;
 }
+
+
+// Inicializa los recursos de dispositivo, cadena de intercambio y contexto para enviar comandos al GPU o CPU
+bool CDXManager::Initialize(HWND hWnd, bool bUseWARP, IDXGIAdapter* pAdapter)
+{
+	//Tramites de cadena de intercambio
+	DXGI_SWAP_CHAIN_DESC dscd;
+	memset(&dscd, 0, sizeof(dscd));
+	dscd.BufferCount = 2;
+	//B8G8R8A8
+	dscd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	//59.98Hz de televisiones, numerador de 5998, denominador en 100 | si se deja en 0 es automatico 
+	dscd.BufferDesc.RefreshRate.Numerator = 0;
+	dscd.BufferDesc.RefreshRate.Denominator = 0;
+	dscd.BufferDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;
+	//Transmitiendo informacion en orden progresivo (alta calidad) un cuadro a la vez
+	dscd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE;
+	RECT rc;
+	GetClientRect(hWnd, &rc);
+	dscd.BufferDesc.Height = rc.bottom;
+	dscd.BufferDesc.Width = rc.right;
+	// - | Memoria de procesamiento de libre acceso
+	dscd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
+	dscd.Flags = 0;
+	//Puerto de vision
+	dscd.OutputWindow = hWnd;
+	//Antialeasing aumentar cantidad de pixeles de entrada por uno de entrada
+	dscd.SampleDesc.Count = 1;
+	//Algoritmo de entrada
+	dscd.SampleDesc.Quality = 0;
+	//Nadie garantiza que primary sobreviva despues del intecambio
+	dscd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+	dscd.Windowed = true;
+
+	D3D_FEATURE_LEVEL Requested = D3D_FEATURE_LEVEL_11_0, Detected;
+
+	if (bUseWARP)
+	{
+		D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_WARP, NULL, 0, &Requested, 1, D3D11_SDK_VERSION, &dscd, &m_pSwapChain, &m_pDevice, &Detected, &m_pContext);
+	}
+	else
+	{
+		if (pAdapter)
+		{
+			HRESULT hr = D3D11CreateDeviceAndSwapChain(
+				pAdapter, D3D_DRIVER_TYPE_UNKNOWN, 0, 0,
+				&Requested, 1, D3D11_SDK_VERSION,
+				&dscd, &m_pSwapChain, &m_pDevice, &Detected, &m_pContext);
+			if (FAILED(hr)) return false;
+		}
+		else
+		{
+			HRESULT hr = D3D11CreateDeviceAndSwapChain(
+				NULL, D3D_DRIVER_TYPE_HARDWARE, 0, 0,
+				&Requested, 1, D3D11_SDK_VERSION,
+				&dscd, &m_pSwapChain, &m_pDevice, &Detected, &m_pContext);
+			if (FAILED(hr)) return false;
+		}
+	}
+	return true;
+}
+
+
+// Terminar la sesión de Directx11
+void CDXManager::Uninitialize()
+{
+	SAFE_RELEASE(m_pContext);
+	SAFE_RELEASE(m_pDevice);
+	SAFE_RELEASE(m_pSwapChain);
+}

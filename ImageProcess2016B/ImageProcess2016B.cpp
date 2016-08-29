@@ -11,6 +11,7 @@
 HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
+CDXManager g_Manager;							// DXGI and D3d11 Manager
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -25,8 +26,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-	IDXGIAdapter* pAdapter = CDXManager::EnumAndChooseAdapter(NULL);
-	if (pAdapter) pAdapter->Release();
+
+	//Para probar el metodo
+	/*IDXGIAdapter* pAdapter = CDXManager::EnumAndChooseAdapter(NULL);
+	if (pAdapter) pAdapter->Release();*/
 
 
 
@@ -101,6 +104,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
+   IDXGIAdapter* pAdapter = CDXManager::EnumAndChooseAdapter(NULL); //Adaptador
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
@@ -109,6 +113,15 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
+
+   //LUGAR CORRECTO PARA CARGAR
+   if (!g_Manager.Initialize(hWnd, false, pAdapter))
+	   MessageBox(NULL, L"Error al iniciar Directx11", L"Error fatal al iniciar DirectX11", MB_ICONERROR);
+   DXGI_ADAPTER_DESC dad;
+   pAdapter->GetDesc(&dad);
+   SetWindowText(hWnd, dad.Description);
+   SAFE_RELEASE(pAdapter);
+   //Fin lugar correcto
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
