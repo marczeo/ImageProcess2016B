@@ -117,9 +117,15 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    //LUGAR CORRECTO PARA CARGAR
    if (!g_Manager.Initialize(hWnd, false, pAdapter))
 	   MessageBox(NULL, L"Error al iniciar Directx11", L"Error fatal al iniciar DirectX11", MB_ICONERROR);
-   DXGI_ADAPTER_DESC dad;
-   pAdapter->GetDesc(&dad);
-   SetWindowText(hWnd, dad.Description);
+   if (pAdapter != NULL) {
+	   DXGI_ADAPTER_DESC dad;
+	   pAdapter->GetDesc(&dad);
+	   SetWindowText(hWnd, dad.Description);
+   }
+   else
+   {
+	   SetWindowText(hWnd, L"No se seleccionó");
+   }
    SAFE_RELEASE(pAdapter);
    //Fin lugar correcto
 
