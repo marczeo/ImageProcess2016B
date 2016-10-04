@@ -151,6 +151,7 @@
   <ItemGroup>
     <ClInclude Include="DXManager.h" />
     <ClInclude Include="ImageProcess2016B.h" />
+    <ClInclude Include="IPImage.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -158,6 +159,7 @@
   <ItemGroup>
     <ClCompile Include="DXManager.cpp" />
     <ClCompile Include="ImageProcess2016B.cpp" />
+    <ClCompile Include="IPImage.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

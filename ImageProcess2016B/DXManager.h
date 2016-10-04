@@ -11,7 +11,7 @@
 class CDXManager
 {
 protected:
-	ID3D11Device* m_pDevice; //Factory of Device Resources
+	ID3D11Device* m_pDevice; //Factory of Device Resources, es como una fachada de comandos
 	ID3D11DeviceContext* m_pContext; //Command Queue and command Record and Execution
 	IDXGISwapChain* m_pSwapChain; // Buffers Chain (Backbuffer)
 public:
