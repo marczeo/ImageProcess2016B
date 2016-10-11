@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "IPImage.h"
 
+using namespace std;
+
 
 CIPImage::CIPImage()
 {
@@ -69,6 +71,95 @@ CIPImage* CIPImage::CaptureDesktop()
 	DeleteDC(hdcMem);
 	DeleteObject(hbmMem);
 	DeleteDC(hdcDesktop);
+	return pImage;
+
+}
+
+#include <fstream>
+//8bits paletizado mono, 8bits
+CIPImage * CIPImage::CreateImageFromFile(char * pszFileName)
+{
+	//1. Leer el encabezado del archivo
+	//2. Leer la información de imagen (atributos)
+	//3. Cargar la paleta de colores si es que aplica
+	//4. Cargar el mapa de bits y traducción a CIPImage
+
+	//DIB: Device Independent Bitmap  (Bitmap independiente del dispositivo)
+	fstream in;
+	in.open(pszFileName, ios::in | ios::binary);
+
+	if (!in.is_open()) return nullptr;
+	//Leer primara seccion de datos
+	//1. File Header
+	BITMAPFILEHEADER bfh;//Formato libre de regalias por parte de microsoft
+	memset(&bfh, 0, sizeof(bfh));
+	in.read((char*)&bfh, sizeof(bfh));
+
+	//Par de docuentos especiales, firma del documento, indican que va bien, primero B, luego M (mas significativo  M)
+	//Leyó primeros 2bytes del archivo
+	if ('MB' != bfh.bfType) return nullptr;
+
+	//2. Bitmap Info Header
+	BITMAPINFOHEADER bih = { 0 }; //Equivalente a memset
+	in.read((char*)&bih, sizeof(bih));
+	//El encabezado tiene su propio tamaño y se puede verificar
+	if (sizeof(BITMAPINFOHEADER) != bih.biSize) return nullptr;
+
+	//Ya es seguro crear la imagen (Ahora si se pueden asignar recursos)
+	CIPImage* pImage = CreateImage(bih.biWidth, bih.biHeight, sizeof(PIXEL)*bih.biWidth);
+
+	//Sea cual sea el formato, la longitud es la medida, mide una linea de tamaño en bytes, nunca en pixeles
+	//De pixeles a bits
+	int nRowLength = 4 * ((bih.biBitCount*bih.biWidth + 31) / 32); //31 por es el peor sobrante, cada grupo es de 4bytes
+	switch (bih.biBitCount)
+	{ 
+		//Y es positivo hacia arriba
+		//1 bit por pixel
+		//todas las lineas de rastreo, debe ser multiplo de 32 bits, no importa sin sobran bits, 
+		//Ej. 2x2, faltan 2bytes, 
+		//Paletizados
+	case 1:
+	case 4:
+	case 8:
+		//3. Leer paleta
+		{
+		//Formato de la paleta
+		//Numero de colores 2^n
+		RGBQUAD Paleta[256];
+		int nColors = bih.biClrUsed ? bih.biClrUsed : 256;
+		in.read((char*)Paleta, sizeof(RGBQUAD)*nColors);
+		//4. Cargar el mapa de bits y traducirlo
+		//Indices van sin signo
+		//Malloc no invoca a contructor, new sí, usar malloc en casos masivos
+		unsigned char* pRow = (unsigned char*)malloc(nRowLength); //Leer linea por linea
+		//comenzar desde la ultima fila, de abajo hacia arriba
+		for (int j = bih.biHeight - 1; j >= 0; j--)
+		{
+			//Se lee de menor a mayor, de izquierda a derecha
+			in.read((char*)pRow, nRowLength); //lee bytes
+			for (int i = 0; i < bih.biWidth; i++)
+			{
+				//Sacando por referencia, para no hacer copia directa
+				RGBQUAD& Color = Paleta[pRow[i]];
+				PIXEL& P = (*pImage)(i, j);
+				P.r = Color.rgbRed;
+				P.g = Color.rgbGreen;
+				P.b = Color.rgbBlue;
+				P.a = 0xff;
+				//Puntero a una funcion, para calcular el canal alfa en base a color r,g,b.
+			}
+		}
+
+
+		free(pRow);
+		}
+		break;
+	//No paletizados
+	case 24:
+	case 32:
+		break;
+
+	}
 	return pImage;
 
 }

@@ -6,6 +6,7 @@
 #include "DXManager.h"
 #include "IPImage.h"
 #include <math.h>
+#include <commdlg.h> //inprimir, seleccionar color, cuadros de dialogo
 
 #define MAX_LOADSTRING 100
 
@@ -159,6 +160,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CHAR:
 		switch (wParam)
 		{
+		case 'f':
+		case 'F':
+		{
+			//En anssi
+			OPENFILENAMEA ofn = { 0 };
+			char szFileName[1024] = "";
+			ofn.hwndOwner = hWnd;
+			ofn.lStructSize = sizeof(ofn);
+			ofn.lpstrFilter = "Archivos de mapas de bits (*.bmp)\0*.bmp\0";
+			ofn.lpstrFile = szFileName;
+			ofn.nMaxFile = 1023;
+			if (GetOpenFileNameA(&ofn))
+			{
+				if (sImgSource)
+				{
+					CIPImage::DestroyImage(sImgSource);
+					sImgSource = NULL;
+				}
+				sImgSource = CIPImage::CreateImageFromFile(szFileName);
+				InvalidateRect(hWnd, nullptr, false);
+			}
+		}
+		break;
 		case 'c':
 		case 'C':
 			if (sImgSource) CIPImage::DestroyImage(sImgSource);
@@ -203,7 +227,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				//Caputara
 				if (sImgSource)
-					sImgSource->Draw(0, 0, hdc);
+				{
+					//Girar imagen en tiempo real
+					CIPImage* pImg = CIPImage::CreateImage(800, 600,sizeof(CIPImage::PIXEL)*800);
+					for(int j=0;j<512;j++)
+						for (int i = 0; i < 512; i++)
+						{
+							int x = (i)*cos(sTime) - j*sin(sTime);
+							int y = (i)*sin(sTime) + j*cos(sTime);
+							(*pImg)(i, j) = (*sImgSource)(x, y);
+						}
+					pImg->Draw(0, 0, hdc);
+					CIPImage::DestroyImage(pImg);
+					//sImgSource->Draw(0, 0, hdc);
+				}
+				
 
 				//480 progresivo
 				//Ya tenemos lienzo donde pintar, acceso a pixeles
