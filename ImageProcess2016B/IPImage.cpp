@@ -119,7 +119,76 @@ CIPImage * CIPImage::CreateImageFromFile(char * pszFileName)
 		//Ej. 2x2, faltan 2bytes, 
 		//Paletizados
 	case 1:
+	{
+		RGBQUAD Paleta[2];
+		int nColors = bih.biClrUsed ? bih.biClrUsed : 2;
+		in.read((char*)Paleta, sizeof(RGBQUAD)*nColors);
+		//4.-Cargar el mapa de bits y traducirlo a PIXEL
+		unsigned char* pRow = (unsigned char*)malloc(nRowLength);
+
+		for (int j = bih.biHeight - 1; j >= 0; j--)
+		{
+			in.read((char*)pRow, nRowLength);
+			for (int i = 0; i < bih.biWidth / 8; i++)
+			{
+				for (int h = 0; h <= 7; h++)
+				{
+					RGBQUAD& Color = Paleta[((pRow[i] >> (7 - h))) & 0x01];
+					PIXEL& P = (*pImage)(((i * 8) + h), j);
+
+					P.r = Color.rgbRed;
+					P.g = Color.rgbGreen;
+					P.b = Color.rgbBlue;
+					P.a = 0xff;
+				}
+
+				/*P = (*pImage)(i+nRowLength, j);
+				P.r = Color.rgbRed;
+				P.g = Color.rgbGreen;
+				P.b = Color.rgbBlue;
+				P.a = 0xff;*/
+			}
+		}
+		free(pRow);
+	}
+		break;
 	case 4:
+	{
+		//Formato de la paleta
+		//Numero de colores 2^n
+		RGBQUAD Paleta[16];
+		int nColors = bih.biClrUsed ? bih.biClrUsed : 16;
+		in.read((char*)Paleta, sizeof(RGBQUAD)*nColors);
+		//4. Cargar el mapa de bits y traducirlo
+		//Indices van sin signo
+		//Malloc no invoca a contructor, new sí, usar malloc en casos masivos
+		unsigned char* pRow = (unsigned char*)malloc(nRowLength); //Leer linea por linea
+																  //comenzar desde la ultima fila, de abajo hacia arriba
+		for (int j = bih.biHeight - 1; j >= 0; j--)
+		{
+			//Se lee de menor a mayor, de izquierda a derecha
+			in.read((char*)pRow, nRowLength); //lee bytes
+			for (int i = 0; i < bih.biWidth; i++)
+			{
+				//Sacando por referencia, para no hacer copia directa
+				RGBQUAD& Color = Paleta[(pRow[i] >> 4) & 0xF];
+				PIXEL& P = (*pImage)(i * 2, j);
+				P.r = Color.rgbRed;
+				P.g = Color.rgbGreen;
+				P.b = Color.rgbBlue;
+				P.a = 0xff;
+				RGBQUAD& Color2 = Paleta[(pRow[i]) & 0xF];
+				PIXEL& P2 = (*pImage)(i * 2 + 1, j);
+				P2.r = Color2.rgbRed;
+				P2.g = Color2.rgbGreen;
+				P2.b = Color2.rgbBlue;
+				P2.a = 0xff;
+				//Puntero a una funcion, para calcular el canal alfa en base a color r,g,b.
+			}
+		}
+		free(pRow);
+	}
+		break;
 	case 8:
 		//3. Leer paleta
 		{
@@ -149,14 +218,47 @@ CIPImage * CIPImage::CreateImageFromFile(char * pszFileName)
 				//Puntero a una funcion, para calcular el canal alfa en base a color r,g,b.
 			}
 		}
-
-
 		free(pRow);
 		}
 		break;
 	//No paletizados
 	case 24:
+	{
+		unsigned char* pRow = (unsigned char*)malloc(nRowLength);
+		for (int j = bih.biHeight - 1; j >= 0; j--)
+		{
+			in.read((char*)pRow, nRowLength);
+			for (int i = 0; i < bih.biWidth; i++)
+			{
+				//RGBQUAD& Color = Paleta[pRow[i*3]];
+				PIXEL& P = (*pImage)(i, j);
+				P.r = pRow[(i * 3) + 2];
+				P.g = pRow[(i * 3) + 1];
+				P.b = pRow[(i * 3)];
+				P.a = 0xff;
+			}
+		}
+		free(pRow);
+	}
+		break;
 	case 32:
+	{
+		unsigned char* pRow = (unsigned char*)malloc(nRowLength);
+		for (int j = bih.biHeight - 1; j >= 0; j--)
+		{
+			in.read((char*)pRow, nRowLength);
+			for (int i = 0; i < bih.biWidth; i++)
+			{
+				//RGBQUAD& Color = Paleta[pRow[i*3]];
+				PIXEL& P = (*pImage)(i, j);
+				P.r = pRow[(i * 4)];
+				P.g = pRow[(i * 4) + 2];
+				P.b = pRow[(i * 4) + 1];
+				P.a = 0xff;
+			}
+		}
+		free(pRow);
+	}
 		break;
 
 	}

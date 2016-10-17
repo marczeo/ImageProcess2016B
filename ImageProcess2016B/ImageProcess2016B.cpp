@@ -229,17 +229,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				if (sImgSource)
 				{
 					//Girar imagen en tiempo real
-					CIPImage* pImg = CIPImage::CreateImage(800, 600,sizeof(CIPImage::PIXEL)*800);
+					/*CIPImage* pImg = CIPImage::CreateImage(800, 600,sizeof(CIPImage::PIXEL)*800);
 					for(int j=0;j<512;j++)
 						for (int i = 0; i < 512; i++)
 						{
-							int x = (i)*cos(sTime) - j*sin(sTime);
-							int y = (i)*sin(sTime) + j*cos(sTime);
+							int x = (i-206)*cos(sTime) - (j-206)*sin(sTime);
+							int y = (i-206)*sin(sTime) + (j-206)*cos(sTime);
 							(*pImg)(i, j) = (*sImgSource)(x, y);
 						}
 					pImg->Draw(0, 0, hdc);
-					CIPImage::DestroyImage(pImg);
-					//sImgSource->Draw(0, 0, hdc);
+					CIPImage::DestroyImage(pImg);*/
+					sImgSource->Draw(0, 0, hdc);
 				}
 				
 
