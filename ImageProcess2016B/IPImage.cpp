@@ -129,7 +129,7 @@ CIPImage * CIPImage::CreateImageFromFile(char * pszFileName)
 		for (int j = bih.biHeight - 1; j >= 0; j--)
 		{
 			in.read((char*)pRow, nRowLength);
-			for (int i = 0; i < bih.biWidth / 8; i++)
+			for (int i = 0; i <= (bih.biWidth) / 8; i++)
 			{
 				for (int h = 0; h <= 7; h++)
 				{
@@ -147,6 +147,22 @@ CIPImage * CIPImage::CreateImageFromFile(char * pszFileName)
 				P.g = Color.rgbGreen;
 				P.b = Color.rgbBlue;
 				P.a = 0xff;*/
+			}
+			
+
+
+			//bytes restantes
+			for (int i = 0; i < bih.biWidth % 8; i++)
+			{
+				for (int h = 0; h <= 7; h++)
+				{
+					RGBQUAD& Color = Paleta[((pRow[i] >> (7 - h))) & 0x01];
+					PIXEL& P = (*pImage)(((i * 8) + h), j);
+					P.r = Color.rgbRed;
+					P.g = Color.rgbGreen;
+					P.b = Color.rgbBlue;
+					P.a = 0xff;
+				}
 			}
 		}
 		free(pRow);
@@ -192,7 +208,7 @@ CIPImage * CIPImage::CreateImageFromFile(char * pszFileName)
 	case 8:
 		//3. Leer paleta
 		{
-		//Formato de la paleta
+		//Formato de la paleta: BGR
 		//Numero de colores 2^n
 		RGBQUAD Paleta[256];
 		int nColors = bih.biClrUsed ? bih.biClrUsed : 256;
@@ -251,10 +267,10 @@ CIPImage * CIPImage::CreateImageFromFile(char * pszFileName)
 			{
 				//RGBQUAD& Color = Paleta[pRow[i*3]];
 				PIXEL& P = (*pImage)(i, j);
-				P.r = pRow[(i * 4)];
-				P.g = pRow[(i * 4) + 2];
-				P.b = pRow[(i * 4) + 1];
-				P.a = 0xff;
+				P.r = pRow[(i * 4) +2];
+				P.g = pRow[(i * 4) + 1];
+				P.b = pRow[(i * 4)];
+				P.a = 0x03;
 			}
 		}
 		free(pRow);
