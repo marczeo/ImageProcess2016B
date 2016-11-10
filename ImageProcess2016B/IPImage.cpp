@@ -129,7 +129,7 @@ CIPImage * CIPImage::CreateImageFromFile(char * pszFileName)
 		for (int j = bih.biHeight - 1; j >= 0; j--)
 		{
 			in.read((char*)pRow, nRowLength);
-			for (int i = 0; i <= (bih.biWidth) / 8; i++)
+			for (int i = 0; i <= bih.biWidth / 8; i++)
 			{
 				for (int h = 0; h <= 7; h++)
 				{
@@ -184,7 +184,7 @@ CIPImage * CIPImage::CreateImageFromFile(char * pszFileName)
 		{
 			//Se lee de menor a mayor, de izquierda a derecha
 			in.read((char*)pRow, nRowLength); //lee bytes
-			for (int i = 0; i < bih.biWidth; i++)
+			for (int i = 0; i < bih.biWidth/2; i++)
 			{
 				//Sacando por referencia, para no hacer copia directa
 				RGBQUAD& Color = Paleta[(pRow[i] >> 4) & 0xF];
@@ -200,6 +200,20 @@ CIPImage * CIPImage::CreateImageFromFile(char * pszFileName)
 				P2.b = Color2.rgbBlue;
 				P2.a = 0xff;
 				//Puntero a una funcion, para calcular el canal alfa en base a color r,g,b.
+			}
+
+			//bytes restantes
+			for (int i = 0; i < bih.biWidth % 2; i++)
+			{
+				for (int h = 0; h <= 7; h++)
+				{
+					RGBQUAD& Color = Paleta[((pRow[i] >> (7 - h))) & 0x01];
+					PIXEL& P = (*pImage)(((i * 8) + h), j);
+					P.r = Color.rgbRed;
+					P.g = Color.rgbGreen;
+					P.b = Color.rgbBlue;
+					P.a = 0xff;
+				}
 			}
 		}
 		free(pRow);

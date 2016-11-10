@@ -3,6 +3,7 @@
 #include <dxgi.h>
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include "IPImage.h"
 
 #ifndef SAFE_REALASE
 	#define SAFE_RELEASE(X)if((X)){ (X)->Release(); (X)=0;}
@@ -23,5 +24,15 @@ public:
 	bool Initialize(HWND hWnd, bool bUseWARO, IDXGIAdapter* pAdapter);
 	//Terminar la sesión de DirectX11
 	void Uninitialize();
+	
+	//Compilar archivo HLSL a código Nativo del GPU.
+	//CS:Compute Shader
+	//Parametros en unicode
+	ID3D11ComputeShader* CompileCS(wchar_t* pszFilename, char* pszEntryPoint);
+	//Crear una textura 2D a partir de una Imagen CPU->GPU
+	ID3D11Texture2D* CreateTexture(CIPImage* pImage);
+	//Crear una imagen a partir de una textura GPU->CPU
+	CIPImage* CreateImage(ID3D11Texture2D* pTexture2D);
+
 };
 

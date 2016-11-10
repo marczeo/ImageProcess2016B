@@ -16,6 +16,8 @@ WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 CDXManager g_Manager;							// DXGI and D3d11 Manager
 
+ID3D11ComputeShader* g_oCSDefault;				//Default Shader
+
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -132,6 +134,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
    SAFE_RELEASE(pAdapter);
    //Fin lugar correcto
+
+   //compilar Shaders
+   g_oCSDefault = g_Manager.CompileCS(L"..\\Shaders\\Default.hlsl", "main");
+   //Fin compilacion
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);

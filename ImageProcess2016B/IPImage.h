@@ -2,6 +2,7 @@
 #include "DXManager.h"
 class CIPImage
 {
+	friend class CDXManager;
 public:
 	union PIXEL
 	{

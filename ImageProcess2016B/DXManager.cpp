@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "DXManager.h"
+#include "IPImage.h"
 
 
 CDXManager::CDXManager()
@@ -124,4 +125,78 @@ void CDXManager::Uninitialize()
 	SAFE_RELEASE(m_pContext);
 	SAFE_RELEASE(m_pDevice);
 	SAFE_RELEASE(m_pSwapChain);
+}
+
+#include <d3dcompiler.h>
+ID3D11ComputeShader * CDXManager::CompileCS(wchar_t * pszFilename, char * pszEntryPoint)
+{
+	//Objeto binario muy grande (BynaryLargeOBject)
+	ID3DBlob* pDXIL=nullptr;	//DirectX Intermediate Languaje (puro binario, shader compilados) Se le pasa al controlador, y lo convierte en codigo nativo
+	ID3DBlob* pErrors=nullptr;	//Errores y warnings de compilación
+	ID3D11ComputeShader* pCS = nullptr;
+
+	HRESULT hr = D3DCompileFromFile(pszFilename, NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, pszEntryPoint, "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_ENABLE_STRICTNESS, 0, &pDXIL, &pErrors);
+	if (pErrors)
+	{
+		MessageBoxA(NULL,(char*) pErrors->GetBufferPointer(), "Errors or warnings", MB_ICONEXCLAMATION);
+		pErrors->Release();
+	}
+	if (pDXIL)
+	{
+		//Construir codigo nativo
+		hr = m_pDevice->CreateComputeShader(pDXIL->GetBufferPointer(), pDXIL->GetBufferSize(), NULL, &pCS);
+		pDXIL->Release();
+	}
+	if (FAILED(hr))
+		MessageBoxA(NULL, "Unable to compile file.", "Error", MB_ICONERROR);
+	
+	return pCS;
+}
+
+//Crear una textura 2D a partir de una Imagen CPU->GPU
+ID3D11Texture2D* CDXManager::CreateTexture(CIPImage* pImage) 
+{
+	//1. Crear andamio para subir informacion al GPU
+	//(stage)Andamio: buffer de memoria al alcance de Application y Kernel
+	D3D11_TEXTURE2D_DESC dtd;
+	memset(&dtd, 0, sizeof(dtd));
+	dtd.ArraySize = 1;
+	dtd.BindFlags = 0;
+	dtd.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+	dtd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	dtd.MipLevels = 1;
+	dtd.Width = pImage->m_nSizeX;
+	dtd.Height = pImage->m_nSizeY;
+	dtd.SampleDesc.Count = 1;
+	dtd.SampleDesc.Quality = 0;
+	dtd.Usage = D3D11_USAGE_STAGING;
+	ID3D11Texture2D* pStage = nullptr;
+	m_pDevice->CreateTexture2D(&dtd, NULL, &pStage);
+	D3D11_MAPPED_SUBRESOURCE ms;
+	m_pContext->Map(pStage, 0, D3D11_MAP_WRITE,0,&ms);
+	
+	//multiplos de 16, 128bit anidado
+	unsigned char* pDest = (unsigned char*)ms.pData;
+	for (int j = 0; j < pImage->m_nSizeY; j++)
+	{
+		//En nuestra imagen nos movemos de pitch en pitch
+		memcpy(pDest, &(*pImage)(0, j), pImage->m_nPitch);
+		pDest += ms.RowPitch;
+	}
+
+
+	m_pContext->Unmap(pStage, 0);
+	ID3D11Texture2D* pTexture = nullptr;
+	dtd.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	dtd.Usage = D3D11_USAGE_DEFAULT;
+	m_pDevice->CreateTexture2D(&dtd, NULL, &pTexture);
+	//Orden para el GPU
+	m_pContext->CopyResource(pStage, pTexture);
+	pStage->Release();
+	return pTexture;
+}
+//Crear una imagen a partir de una textura GPU->CPU
+CIPImage* CDXManager::CreateImage(ID3D11Texture2D* pTexture2D)
+{
+	return nullptr;
 }
