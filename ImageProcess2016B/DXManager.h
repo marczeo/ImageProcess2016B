@@ -4,7 +4,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include "IPImage.h"
-
+class CIPImage;
 #ifndef SAFE_REALASE
 	#define SAFE_RELEASE(X)if((X)){ (X)->Release(); (X)=0;}
 #endif
@@ -33,6 +33,9 @@ public:
 	ID3D11Texture2D* CreateTexture(CIPImage* pImage);
 	//Crear una imagen a partir de una textura GPU->CPU
 	CIPImage* CreateImage(ID3D11Texture2D* pTexture2D);
-
+	//
+	ID3D11Device* GetDevice() { return m_pDevice; }
+	ID3D11DeviceContext* GetContext() { return m_pContext; }
+	IDXGISwapChain* GetSwapChain() { return m_pSwapChain; }
 };
 

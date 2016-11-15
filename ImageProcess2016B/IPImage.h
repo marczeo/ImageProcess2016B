@@ -1,5 +1,5 @@
 #pragma once
-#include "DXManager.h"
+//#include "DXManager.h"
 class CIPImage
 {
 	friend class CDXManager;
@@ -23,8 +23,7 @@ public:
 	static CIPImage* CreateImage(int sx, int sy, int nPitch);
 	static void DestroyImage(CIPImage* pImage);
 	static CIPImage* CaptureDesktop();
-	static CIPImage* CreateImageFromFile(char* pszFileName); //Formato DIB "BMP"
-	ID3D11Texture2D* CreateTexture(CDXManager* pManager);
+	static CIPImage* CreateImageFromFile(char* pszFileName); //Formato DIB "BMP"	
 	void Draw(int x, int y, HDC hdc);
 protected:
 	CIPImage();

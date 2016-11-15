@@ -16,8 +16,16 @@ RWTexture2D<float4> Output;
 [numthreads(16,16,1)]
 void main(uint3 id:SV_DispatchThreadID, uint3 lid:SV_GroupThreadID)
 {
-	//Entrada se transfiere a la salida
-	Output[uint2(id.xy)] = Input[id.xy];
+	//Rotar 45°
+	/*float2 rot = float2(
+		id.x*cos(3.141592 / 4) - id.y*sin(3.141592 / 4),
+		id.x*sin(3.141592 / 4) + id.y*cos(3.141592 / 4));
+	Output[id.xy] = Input[int2(rot.xy)];*/
+	//fin de rotar
+
+	//Detectar bordes
+	Output[id.xy] = Input[id.xy + int2(1, 0)] - Input[id.xy] + 0.5;
+	//Fin de deteccion
 
 	
 	//float4 A, B;

@@ -135,7 +135,19 @@ ID3D11ComputeShader * CDXManager::CompileCS(wchar_t * pszFilename, char * pszEnt
 	ID3DBlob* pErrors=nullptr;	//Errores y warnings de compilación
 	ID3D11ComputeShader* pCS = nullptr;
 
-	HRESULT hr = D3DCompileFromFile(pszFilename, NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, pszEntryPoint, "cs_5_0", D3DCOMPILE_OPTIMIZATION_LEVEL3 | D3DCOMPILE_ENABLE_STRICTNESS, 0, &pDXIL, &pErrors);
+	HRESULT hr = D3DCompileFromFile(pszFilename, 
+		NULL, 
+		D3D_COMPILE_STANDARD_FILE_INCLUDE, 
+		pszEntryPoint, "cs_5_0", 
+		
+	//DEPURACION
+#ifndef _DEBUG
+		D3DCOMPILE_OPTIMIZATION_LEVEL3|
+#else
+	D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG |
+#endif
+		D3DCOMPILE_ENABLE_STRICTNESS, 0, &pDXIL, &pErrors);
+	//FIN DEPURACION
 	if (pErrors)
 	{
 		MessageBoxA(NULL,(char*) pErrors->GetBufferPointer(), "Errors or warnings", MB_ICONEXCLAMATION);
@@ -162,7 +174,7 @@ ID3D11Texture2D* CDXManager::CreateTexture(CIPImage* pImage)
 	memset(&dtd, 0, sizeof(dtd));
 	dtd.ArraySize = 1;
 	dtd.BindFlags = 0;
-	dtd.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
+	dtd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	dtd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	dtd.MipLevels = 1;
 	dtd.Width = pImage->m_nSizeX;
@@ -178,7 +190,7 @@ ID3D11Texture2D* CDXManager::CreateTexture(CIPImage* pImage)
 	//multiplos de 16, 128bit anidado
 	unsigned char* pDest = (unsigned char*)ms.pData;
 	for (int j = 0; j < pImage->m_nSizeY; j++)
-	{
+	{		
 		//En nuestra imagen nos movemos de pitch en pitch
 		memcpy(pDest, &(*pImage)(0, j), pImage->m_nPitch);
 		pDest += ms.RowPitch;
@@ -189,9 +201,10 @@ ID3D11Texture2D* CDXManager::CreateTexture(CIPImage* pImage)
 	ID3D11Texture2D* pTexture = nullptr;
 	dtd.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	dtd.Usage = D3D11_USAGE_DEFAULT;
+	dtd.CPUAccessFlags = 0;
 	m_pDevice->CreateTexture2D(&dtd, NULL, &pTexture);
 	//Orden para el GPU
-	m_pContext->CopyResource(pStage, pTexture);
+	m_pContext->CopyResource(pTexture,pStage);
 	pStage->Release();
 	return pTexture;
 }
