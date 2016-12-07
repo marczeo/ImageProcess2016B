@@ -211,5 +211,40 @@ ID3D11Texture2D* CDXManager::CreateTexture(CIPImage* pImage)
 //Crear una imagen a partir de una textura GPU->CPU
 CIPImage* CDXManager::CreateImage(ID3D11Texture2D* pTexture2D)
 {
-	return nullptr;
+	//Crear andamio (img de inicio)
+	ID3D11Texture2D* pStage = 0;
+	D3D11_TEXTURE2D_DESC dtd = { 0 };//Descritor de la imagen anterio
+	pTexture2D->GetDesc(&dtd);
+
+
+	dtd.BindFlags = 0;
+	dtd.Usage = D3D11_USAGE_STAGING;
+	dtd.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	dtd.MipLevels = 1;
+	//Crear textura y guardar en andamio
+	m_pDevice->CreateTexture2D(&dtd, 0, &pStage);
+
+	m_pContext->CopyResource(pStage, pTexture2D);
+
+	//Para poder leer bytes de la textura
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	m_pContext->Map(pStage, 0, D3D11_MAP_READ, NULL, &mappedResource);
+
+	
+	unsigned char* pSour = (unsigned char*)mappedResource.pData;//puntero inicial
+	unsigned int uiPitch = mappedResource.RowPitch;
+
+	//Crear imagen
+	CIPImage* pImage = CIPImage::CreateImage(dtd.Width, dtd.Height, dtd.Width * sizeof(CIPImage::PIXEL));
+
+	for (int j = 0; j < dtd.Height; j++)
+	{
+		memcpy(&(*pImage)(0, j), pSour, pImage->m_nPitch);
+		pSour += uiPitch;
+	}
+
+	//Liberar recursos
+	pStage->Release();
+	m_pContext->Unmap(pTexture2D, 0);
+	return pImage;
 }

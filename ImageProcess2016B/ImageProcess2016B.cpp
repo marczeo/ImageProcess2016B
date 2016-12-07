@@ -192,8 +192,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case 'c':
 		case 'C':
 			if (sImgSource) CIPImage::DestroyImage(sImgSource);
-			sImgSource = CIPImage::CaptureDesktop();
+			sImgSource = CIPImage::CaptureDesktop();			
 			InvalidateRect(hWnd, NULL, false);		
+			break;
+		case 't':
+		case 'T':
+			if (sImgSource) CIPImage::DestroyImage(sImgSource);
+			sImgSource = CIPImage::CaptureDesktop();
+			ID3D11Texture2D *textura = g_Manager.CreateTexture(sImgSource);
+			sImgSource = g_Manager.CreateImage(textura);
+			textura->Release();
+			InvalidateRect(hWnd, NULL, false);
 			break;
 		}
 	case WM_CREATE:
@@ -248,46 +257,50 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 					//para HLSL
 					//0. Cargar la imagen al GPU en un recurso de textura2D
-					ID3D11Texture2D* pTexture = 0;
-					pTexture = g_Manager.CreateTexture(sImgSource);
-					//1.-Crear vistas de atado de los recursos al GPU  (Vistas abstraccion de hardware) La vista puede cambiar la interpretacion, el recurso es una coleccion de bytes, el casteo se realiza por hardware, 8bit por pixel, vista acopla el recurso con necesidades del CPU
-					//bytes mas baratos en cuanto espacio, vista conecta recurso con el GPU
-					ID3D11ShaderResourceView *pSRV = 0;
-					g_Manager.GetDevice()->CreateShaderResourceView(
-						pTexture, NULL, &pSRV);
-						//NOTA: cuando usamos DXGI_FORMAT_R8G8B8A8_UNOR; 
-						//R8G8B8A8 expresan empaque : GRAM
-						//UNORM expresa desempaque : GPU
-					//2.Obtener  acceso al backbuffer
-					ID3D11Texture2D* pBackbuffer = 0;
-					g_Manager.GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackbuffer);
-					//3. Crear la vista de atado de recurso de salida
-					ID3D11UnorderedAccessView* pUAV = 0;
-					g_Manager.GetDevice()->CreateUnorderedAccessView(
-						pBackbuffer, NULL, &pUAV);
-					//4. Preparar el computo, instalando las vistas
-					//shader y ejecución
-					g_Manager.GetContext()->CSSetShader(g_pCSDefault, 0, 0);
-					g_Manager.GetContext()->CSSetUnorderedAccessViews(
-						0, 1, &pUAV, 0);
-						//usar antes de concectar entradas
-					g_Manager.GetContext()->CSSetShaderResources(0, 1, &pSRV);
-					D3D11_TEXTURE2D_DESC dtd;
-					pBackbuffer->GetDesc(&dtd);
-					g_Manager.GetContext()->Dispatch((dtd.Width + 15) / 16, (dtd.Height + 15) / 16, 1);
-					//0: Espera si es necesario, señal de sincronia vertical
-					g_Manager.GetSwapChain()->Present(1, 0);
-					//5. Liberacion de recursos temporales 
-					//(vistas y referencias a los recursos)
-					pUAV->Release();
-					pSRV->Release();
-					pBackbuffer->Release();
-					//Si se desaloja de memoria
-					pTexture->Release();
+					//ID3D11Texture2D* pTexture = 0;
+					//pTexture = g_Manager.CreateTexture(sImgSource);
+					////1.-Crear vistas de atado de los recursos al GPU  (Vistas abstraccion de hardware) La vista puede cambiar la interpretacion, el recurso es una coleccion de bytes, el casteo se realiza por hardware, 8bit por pixel, vista acopla el recurso con necesidades del CPU
+					////bytes mas baratos en cuanto espacio, vista conecta recurso con el GPU
+					//ID3D11ShaderResourceView *pSRV = 0;
+					//g_Manager.GetDevice()->CreateShaderResourceView(
+					//	pTexture, NULL, &pSRV);
+					////	NOTA: cuando usamos DXGI_FORMAT_R8G8B8A8_UNOR; 
+					////	R8G8B8A8 expresan empaque : GRAM
+					////	UNORM expresa desempaque : GPU
+					////2.Obtener  acceso al backbuffer
+					//ID3D11Texture2D* pBackbuffer = 0;
+					//g_Manager.GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackbuffer);
+					////3. Crear la vista de atado de recurso de salida
+					//ID3D11UnorderedAccessView* pUAV = 0;
+					//g_Manager.GetDevice()->CreateUnorderedAccessView(
+					//	pBackbuffer, NULL, &pUAV);
+					////4. Preparar el computo, instalando las vistas
+					////shader y ejecución
+					//g_Manager.GetContext()->CSSetShader(g_pCSDefault, 0, 0);
+					//g_Manager.GetContext()->CSSetUnorderedAccessViews(
+					//	0, 1, &pUAV, 0);
+					////	usar antes de concectar entradas
+					//g_Manager.GetContext()->CSSetShaderResources(0, 1, &pSRV);
+					//D3D11_TEXTURE2D_DESC dtd;
+					//pBackbuffer->GetDesc(&dtd);
+					//g_Manager.GetContext()->Dispatch((dtd.Width + 15) / 16, (dtd.Height + 15) / 16, 1);
+					////0: Espera si es necesario, señal de sincronia vertical
+					//g_Manager.GetSwapChain()->Present(1, 0);
+					////5. Liberacion de recursos temporales 
+					////(vistas y referencias a los recursos)
+					//pUAV->Release();
+					//pSRV->Release();
+					//pBackbuffer->Release();
+					////Si se desaloja de memoria
+					//
+					////Dibujar textura a imagen
+					//	
+					//sImgSource = g_Manager.CreateImage(pTexture);					
+					//pTexture->Release();
 
 
 
-					//sImgSource->Draw(0, 0, hdc);
+					sImgSource->Draw(0, 0, hdc);
 				}
 				
 
