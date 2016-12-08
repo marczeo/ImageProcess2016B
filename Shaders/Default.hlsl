@@ -37,3 +37,19 @@ void main(uint3 id:SV_DispatchThreadID, uint3 lid:SV_GroupThreadID)
 
 	//A.rgba = B.xyzw;
 }
+
+[numthreads(16, 16, 1)]
+void main0(uint3 id:SV_DispatchThreadID, uint3 lid : SV_GroupThreadID)
+{
+	Output[id.xy] = Input[id.xy];
+}
+[numthreads(16, 16, 1)]
+void main2(uint3 id:SV_DispatchThreadID, uint3 lid : SV_GroupThreadID)
+{
+	//Rotar 45°
+	float2 rot = float2(
+	id.x*cos(3.141592 / 4) - id.y*sin(3.141592 / 4),
+	id.x*sin(3.141592 / 4) + id.y*cos(3.141592 / 4));
+	Output[id.xy] = Input[int2(rot.xy)];
+	//fin de rotar
+}

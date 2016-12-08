@@ -220,7 +220,6 @@ CIPImage* CDXManager::CreateImage(ID3D11Texture2D* pTexture2D)
 	dtd.BindFlags = 0;
 	dtd.Usage = D3D11_USAGE_STAGING;
 	dtd.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	dtd.MipLevels = 1;
 	//Crear textura y guardar en andamio
 	m_pDevice->CreateTexture2D(&dtd, 0, &pStage);
 
@@ -231,16 +230,16 @@ CIPImage* CDXManager::CreateImage(ID3D11Texture2D* pTexture2D)
 	m_pContext->Map(pStage, 0, D3D11_MAP_READ, NULL, &mappedResource);
 
 	
-	unsigned char* pSour = (unsigned char*)mappedResource.pData;//puntero inicial
-	unsigned int uiPitch = mappedResource.RowPitch;
+	unsigned char* pDest= (unsigned char*)mappedResource.pData;//puntero inicial
+	
 
 	//Crear imagen
 	CIPImage* pImage = CIPImage::CreateImage(dtd.Width, dtd.Height, dtd.Width * sizeof(CIPImage::PIXEL));
 
 	for (int j = 0; j < dtd.Height; j++)
 	{
-		memcpy(&(*pImage)(0, j), pSour, pImage->m_nPitch);
-		pSour += uiPitch;
+		memcpy(&(*pImage)(0, j), pDest, pImage->m_nPitch);
+		pDest += mappedResource.RowPitch;
 	}
 
 	//Liberar recursos

@@ -16,7 +16,9 @@ WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 CDXManager g_Manager;							// DXGI and D3d11 Manager
 
+ID3D11Texture2D *textura = NULL;
 ID3D11ComputeShader* g_pCSDefault;				//Default Shader
+char opc = ' ';
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -137,6 +139,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    //compilar Shaders
    g_pCSDefault = g_Manager.CompileCS(L"..\\Shaders\\Default.hlsl", "main");
+
    //Fin compilacion
 
    ShowWindow(hWnd, nCmdShow);
@@ -185,8 +188,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					sImgSource = NULL;
 				}
 				sImgSource = CIPImage::CreateImageFromFile(szFileName);
+
+				
 				InvalidateRect(hWnd, nullptr, false);
 			}
+			opc = 'f';
 		}
 		break;
 		case 'c':
@@ -194,14 +200,48 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			if (sImgSource) CIPImage::DestroyImage(sImgSource);
 			sImgSource = CIPImage::CaptureDesktop();			
 			InvalidateRect(hWnd, NULL, false);		
+			opc = 'c';
 			break;
 		case 't':
 		case 'T':
-			if (sImgSource) CIPImage::DestroyImage(sImgSource);
-			sImgSource = CIPImage::CaptureDesktop();
-			ID3D11Texture2D *textura = g_Manager.CreateTexture(sImgSource);
-			sImgSource = g_Manager.CreateImage(textura);
-			textura->Release();
+			if (sImgSource)
+			{
+				if (textura && opc!='t')
+				{
+					textura->Release();
+					textura = NULL;
+				}
+				textura = g_Manager.CreateTexture(sImgSource);
+				sImgSource = g_Manager.CreateImage(textura);
+				textura->Release();
+				InvalidateRect(hWnd, NULL, false);
+				opc = 't';
+			}
+			else {
+				MessageBox(NULL, L"Error al crear textura: no hay img source", L"Error textura", MB_ICONERROR);
+			}
+			break;
+		case 's':
+		case 'S':
+			InvalidateRect(hWnd, NULL, false);
+			opc = 's';
+			break;
+		case 'r':
+		case 'R' :
+			g_pCSDefault = g_Manager.CompileCS(L"..\\Shaders\\Default.hlsl", "main");
+			InvalidateRect(hWnd, NULL, false);
+			opc = 'r';
+			break;
+		case '0':
+			g_pCSDefault = g_Manager.CompileCS(L"..\\Shaders\\Default.hlsl", "main0");
+			InvalidateRect(hWnd, NULL, false);
+			break;
+		case '1':
+			g_pCSDefault = g_Manager.CompileCS(L"..\\Shaders\\Default.hlsl", "main");
+			InvalidateRect(hWnd, NULL, false);
+			break;
+		case '2':
+			g_pCSDefault = g_Manager.CompileCS(L"..\\Shaders\\Default.hlsl", "main2");
 			InvalidateRect(hWnd, NULL, false);
 			break;
 		}
@@ -255,52 +295,55 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					pImg->Draw(0, 0, hdc);
 					CIPImage::DestroyImage(pImg);*/
 
-					//para HLSL
-					//0. Cargar la imagen al GPU en un recurso de textura2D
-					//ID3D11Texture2D* pTexture = 0;
-					//pTexture = g_Manager.CreateTexture(sImgSource);
-					////1.-Crear vistas de atado de los recursos al GPU  (Vistas abstraccion de hardware) La vista puede cambiar la interpretacion, el recurso es una coleccion de bytes, el casteo se realiza por hardware, 8bit por pixel, vista acopla el recurso con necesidades del CPU
-					////bytes mas baratos en cuanto espacio, vista conecta recurso con el GPU
-					//ID3D11ShaderResourceView *pSRV = 0;
-					//g_Manager.GetDevice()->CreateShaderResourceView(
-					//	pTexture, NULL, &pSRV);
-					////	NOTA: cuando usamos DXGI_FORMAT_R8G8B8A8_UNOR; 
-					////	R8G8B8A8 expresan empaque : GRAM
-					////	UNORM expresa desempaque : GPU
-					////2.Obtener  acceso al backbuffer
-					//ID3D11Texture2D* pBackbuffer = 0;
-					//g_Manager.GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackbuffer);
-					////3. Crear la vista de atado de recurso de salida
-					//ID3D11UnorderedAccessView* pUAV = 0;
-					//g_Manager.GetDevice()->CreateUnorderedAccessView(
-					//	pBackbuffer, NULL, &pUAV);
-					////4. Preparar el computo, instalando las vistas
-					////shader y ejecución
-					//g_Manager.GetContext()->CSSetShader(g_pCSDefault, 0, 0);
-					//g_Manager.GetContext()->CSSetUnorderedAccessViews(
-					//	0, 1, &pUAV, 0);
-					////	usar antes de concectar entradas
-					//g_Manager.GetContext()->CSSetShaderResources(0, 1, &pSRV);
-					//D3D11_TEXTURE2D_DESC dtd;
-					//pBackbuffer->GetDesc(&dtd);
-					//g_Manager.GetContext()->Dispatch((dtd.Width + 15) / 16, (dtd.Height + 15) / 16, 1);
-					////0: Espera si es necesario, señal de sincronia vertical
-					//g_Manager.GetSwapChain()->Present(1, 0);
-					////5. Liberacion de recursos temporales 
-					////(vistas y referencias a los recursos)
-					//pUAV->Release();
-					//pSRV->Release();
-					//pBackbuffer->Release();
-					////Si se desaloja de memoria
-					//
-					////Dibujar textura a imagen
-					//	
-					//sImgSource = g_Manager.CreateImage(pTexture);					
-					//pTexture->Release();
 
+					if(opc=='t' || opc == 'c' || opc == 'f' || opc=='r')
+					{ 
+						sImgSource->Draw(0, 0, hdc);
+					}
+					else if(opc=='s')
+					{ 
 
+						//para HLSL
+						//0. Cargar la imagen al GPU en un recurso de textura2D
+						ID3D11Texture2D* pTexture = 0;
+						pTexture = g_Manager.CreateTexture(sImgSource);
+						//1.-Crear vistas de atado de los recursos al GPU  (Vistas abstraccion de hardware) La vista puede cambiar la interpretacion, el recurso es una coleccion de bytes, el casteo se realiza por hardware, 8bit por pixel, vista acopla el recurso con necesidades del CPU
+						//bytes mas baratos en cuanto espacio, vista conecta recurso con el GPU
+						ID3D11ShaderResourceView *pSRV = 0;
+						g_Manager.GetDevice()->CreateShaderResourceView(
+							pTexture, NULL, &pSRV);
+						//	NOTA: cuando usamos DXGI_FORMAT_R8G8B8A8_UNOR; 
+						//	R8G8B8A8 expresan empaque : GRAM
+						//	UNORM expresa desempaque : GPU
+						//2.Obtener  acceso al backbuffer
+						ID3D11Texture2D* pBackbuffer = 0;
+						g_Manager.GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackbuffer);
+						//3. Crear la vista de atado de recurso de salida
+						ID3D11UnorderedAccessView* pUAV = 0;
+						g_Manager.GetDevice()->CreateUnorderedAccessView(
+							pBackbuffer, NULL, &pUAV);
+						//4. Preparar el computo, instalando las vistas
+						//shader y ejecución
+						g_Manager.GetContext()->CSSetShader(g_pCSDefault, 0, 0);
+						g_Manager.GetContext()->CSSetUnorderedAccessViews(
+							0, 1, &pUAV, 0);
+						//	usar antes de concectar entradas
+						g_Manager.GetContext()->CSSetShaderResources(0, 1, &pSRV);
+						D3D11_TEXTURE2D_DESC dtd;
+						pBackbuffer->GetDesc(&dtd);
+						g_Manager.GetContext()->Dispatch((dtd.Width + 15) / 16, (dtd.Height + 15) / 16, 1);
+						//0: Espera si es necesario, señal de sincronia vertical
+						g_Manager.GetSwapChain()->Present(1, 0);
+						//5. Liberacion de recursos temporales 
+						//(vistas y referencias a los recursos)
+						pUAV->Release();
+						pSRV->Release();
+						pBackbuffer->Release();
+						//Si se desaloja de memoria										
+						pTexture->Release();
+					}
 
-					sImgSource->Draw(0, 0, hdc);
+					
 				}
 				
 
